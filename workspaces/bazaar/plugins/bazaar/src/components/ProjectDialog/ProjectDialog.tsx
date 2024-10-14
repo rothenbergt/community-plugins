@@ -38,6 +38,7 @@ type Props = {
   defaultValues: FormValues;
   open: boolean;
   projectSelector?: JSX.Element;
+  userSelector?: JSX.Element;
   deleteButton?: JSX.Element;
   handleClose: () => void;
 };
@@ -49,6 +50,7 @@ export const ProjectDialog = ({
   defaultValues,
   open,
   projectSelector,
+  userSelector,
   deleteButton,
   handleClose,
 }: Props) => {
@@ -120,7 +122,7 @@ export const ProjectDialog = ({
             options={['small', 'medium', 'large']}
           />
 
-          <InputField
+          {/* <InputField
             error={errors.responsible}
             control={control}
             rules={{
@@ -129,7 +131,9 @@ export const ProjectDialog = ({
             inputType="responsible"
             helperText="Please enter a contact person"
             placeholder="Contact person of the project"
-          />
+          /> */}
+
+          {isAddForm && userSelector}
 
           {isAddForm && projectSelector}
 

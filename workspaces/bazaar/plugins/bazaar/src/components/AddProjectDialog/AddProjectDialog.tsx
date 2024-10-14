@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Entity, stringifyEntityRef } from '@backstage/catalog-model';
 import { UseFormReset, UseFormGetValues } from 'react-hook-form';
 import { useApi, alertApiRef } from '@backstage/core-plugin-api';
@@ -22,6 +22,7 @@ import { ProjectDialog } from '../ProjectDialog';
 import { ProjectSelector } from '../ProjectSelector';
 import { BazaarProject, FormValues, Size, Status } from '../../types';
 import { bazaarApiRef } from '../../api';
+import { UserSelector } from '../UserSelector';
 
 type Props = {
   catalogEntities: Entity[];
@@ -41,6 +42,7 @@ export const AddProjectDialog = ({
   const bazaarApi = useApi(bazaarApiRef);
   const alertApi = useApi(alertApiRef);
   const [selectedEntity, setSelectedEntity] = useState<Entity | null>(null);
+  const [selectedUser, setSelectedUser] = useState<Entity | null>(null);
 
   const defaultValues = {
     title: '',
@@ -52,6 +54,23 @@ export const AddProjectDialog = ({
     responsible: '',
     startDate: null,
     endDate: null,
+  };
+
+  const filteredCatalogEntities = useMemo(
+    () =>
+      catalogEntities.filter(entity =>
+        ['Component', 'Resource'].includes(entity.kind),
+      ),
+    [catalogEntities],
+  );
+
+  const filteredUserEntities = useMemo(
+    () => catalogEntities.filter(entity => ['User'].includes(entity.kind)),
+    [catalogEntities],
+  );
+
+  const handleUserChange = (user: Entity | null) => {
+    setSelectedUser(user);
   };
 
   const handleEntityClick = (entity: Entity) => {
@@ -70,6 +89,7 @@ export const AddProjectDialog = ({
     const response = await bazaarApi.addProject({
       ...formValues,
       entityRef: selectedEntity ? stringifyEntityRef(selectedEntity) : null,
+      responsible: selectedUser ? selectedUser.metadata.name : '',
       startDate: formValues.startDate ?? null,
       endDate: formValues.endDate ?? null,
     } as BazaarProject);
@@ -98,10 +118,19 @@ export const AddProjectDialog = ({
       projectSelector={
         <ProjectSelector
           onChange={handleEntityClick}
-          catalogEntities={catalogEntities || []}
+          catalogEntities={filteredCatalogEntities || []}
           disableClearable={false}
           defaultValue={null}
           label="Select a project"
+        />
+      }
+      userSelector={
+        <UserSelector
+          users={filteredUserEntities}
+          onChange={handleUserChange}
+          disableClearable={false}
+          defaultValue={null}
+          label="Select responsible user"
         />
       }
       handleClose={handleClose}

@@ -43,7 +43,18 @@ export const fetchCatalogItems = async (
 ): Promise<Entity[]> => {
   const entities = await catalogApi.getEntities({
     filter: {
-      kind: ['Component', 'Resource'],
+      kind: ['Component', 'Resource', 'User'],
+    },
+    fields: ['kind', 'metadata.name', 'metadata.namespace'],
+  });
+
+  return entities.items;
+};
+
+export const fetchUsers = async (catalogApi: CatalogApi): Promise<Entity[]> => {
+  const entities = await catalogApi.getEntities({
+    filter: {
+      kind: ['User'],
     },
     fields: ['kind', 'metadata.name', 'metadata.namespace'],
   });
