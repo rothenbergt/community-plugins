@@ -14,12 +14,16 @@
  * limitations under the License.
  */
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Button from '@material-ui/core/Button';
 import Dialog from '@material-ui/core/Dialog';
 import { useForm, UseFormReset, UseFormGetValues } from 'react-hook-form';
+import { useApi } from '@backstage/core-plugin-api';
+import { catalogApiRef } from '@backstage/plugin-catalog-react';
+import { Entity } from '@backstage/catalog-model';
 import { InputField } from '../InputField/InputField';
 import { InputSelector } from '../InputSelector/InputSelector';
+import { UserSelector } from '../UserSelector';
 import { FormValues } from '../../types';
 import { DoubleDateSelector } from '../DoubleDateSelector/DoubleDateSelector';
 import {
@@ -27,6 +31,7 @@ import {
   DialogActions,
   DialogContent,
 } from '../CustomDialogTitle';
+import { fetchUsers } from '../../util/fetchMethods';
 
 type Props = {
   handleSave: (
@@ -38,7 +43,6 @@ type Props = {
   defaultValues: FormValues;
   open: boolean;
   projectSelector?: JSX.Element;
-  userSelector?: JSX.Element;
   deleteButton?: JSX.Element;
   handleClose: () => void;
 };
@@ -50,10 +54,16 @@ export const ProjectDialog = ({
   defaultValues,
   open,
   projectSelector,
-  userSelector,
   deleteButton,
   handleClose,
 }: Props) => {
+  const catalogApi = useApi(catalogApiRef);
+  const [users, setUsers] = useState<Entity[]>([]);
+
+  useEffect(() => {
+    fetchUsers(catalogApi).then(setUsers);
+  }, [catalogApi]);
+
   const {
     handleSubmit,
     reset,
@@ -122,20 +132,20 @@ export const ProjectDialog = ({
             options={['small', 'medium', 'large']}
           />
 
-          {/* <InputField
-            error={errors.responsible}
-            control={control}
-            rules={{
-              required: true,
-            }}
-            inputType="responsible"
-            helperText="Please enter a contact person"
-            placeholder="Contact person of the project"
-          /> */}
-
-          {isAddForm && userSelector}
-
           {isAddForm && projectSelector}
+
+          <UserSelector
+            users={users}
+            onChange={(user: Entity | null) =>
+              setValue('responsible', user ? user.metadata.name : '')
+            }
+            disableClearable={false}
+            defaultValue={
+              users.find(u => u.metadata.name === defaultValues.responsible) ||
+              null
+            }
+            label="Select responsible user"
+          />
 
           <InputField
             error={errors.community}
