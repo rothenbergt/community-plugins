@@ -20,7 +20,7 @@ import Dialog from '@material-ui/core/Dialog';
 import { useForm, UseFormReset, UseFormGetValues } from 'react-hook-form';
 import { useApi } from '@backstage/core-plugin-api';
 import { catalogApiRef } from '@backstage/plugin-catalog-react';
-import { Entity } from '@backstage/catalog-model';
+import { Entity, stringifyEntityRef } from '@backstage/catalog-model';
 import { InputField } from '../InputField/InputField';
 import { InputSelector } from '../InputSelector/InputSelector';
 import { UserSelector } from '../UserSelector';
@@ -85,6 +85,16 @@ export const ProjectDialog = ({
     reset(defaultValues);
   };
 
+  const getDefaultResponsible = () => {
+    if (defaultValues.responsible) {
+      return (
+        users.find(u => stringifyEntityRef(u) === defaultValues.responsible) ||
+        null
+      );
+    }
+    return null;
+  };
+
   return (
     <div>
       <Dialog
@@ -137,14 +147,11 @@ export const ProjectDialog = ({
           <UserSelector
             users={users}
             disableClearable={false}
-            defaultValue={
-              users.find(u => u.metadata.name === defaultValues.responsible) ||
-              null
-            }
-            label="Select responsible user"
+            defaultValue={getDefaultResponsible()}
+            label="Select or enter responsible user"
             name="responsible"
             control={control}
-            rules={{ required: 'Please select a responsible user' }}
+            rules={{ required: 'Please select or enter a responsible user' }}
           />
 
           <InputField

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 import React from 'react';
-import { Entity } from '@backstage/catalog-model';
+import { Entity, stringifyEntityRef } from '@backstage/catalog-model';
 import Typography from '@material-ui/core/Typography';
 import Autocomplete from '@material-ui/lab/Autocomplete';
 import TextField from '@material-ui/core/TextField';
@@ -24,7 +24,7 @@ import { Controller, Control } from 'react-hook-form';
 type Props = {
   users: Entity[];
   disableClearable: boolean;
-  defaultValue: Entity | null | undefined;
+  defaultValue: Entity | null;
   label: string;
   name: string;
   control: Control<any>;
@@ -53,17 +53,23 @@ export const UserSelector = ({
         name={name}
         control={control}
         rules={rules}
-        defaultValue={defaultValue ? defaultValue.metadata.name : ''}
+        defaultValue={defaultValue ? stringifyEntityRef(defaultValue) : ''}
         render={({ field: { onChange, value }, fieldState: { error } }) => (
           <Autocomplete
             className={classes.autocomplete}
             fullWidth
+            freeSolo
             disableClearable={disableClearable}
-            value={users.find(user => user.metadata.name === value) || null}
+            value={
+              users.find(user => stringifyEntityRef(user) === value) || null
+            }
             options={users}
-            getOptionLabel={option => option?.metadata?.name || ''}
+            getOptionLabel={option => {
+              if (typeof option === 'string') return option;
+              return option.metadata.name || stringifyEntityRef(option);
+            }}
             renderOption={option => (
-              <Typography component="span">{option?.metadata?.name}</Typography>
+              <Typography component="span">{option.metadata.name}</Typography>
             )}
             renderInput={params => (
               <TextField
@@ -74,7 +80,15 @@ export const UserSelector = ({
                 helperText={error?.message}
               />
             )}
-            onChange={(_, data) => onChange(data ? data.metadata.name : '')}
+            onChange={(_, data) => {
+              if (typeof data === 'string') {
+                onChange(data);
+              } else if (data) {
+                onChange(stringifyEntityRef(data));
+              } else {
+                onChange('');
+              }
+            }}
           />
         )}
       />
