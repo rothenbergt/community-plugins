@@ -19,13 +19,16 @@ import Typography from '@material-ui/core/Typography';
 import Autocomplete from '@material-ui/lab/Autocomplete';
 import TextField from '@material-ui/core/TextField';
 import { makeStyles } from '@material-ui/core/styles';
+import { Controller, Control } from 'react-hook-form';
 
 type Props = {
   users: Entity[];
-  onChange: (user: Entity | null) => void;
   disableClearable: boolean;
   defaultValue: Entity | null | undefined;
   label: string;
+  name: string;
+  control: Control<any>;
+  rules?: Record<string, any>;
 };
 
 const useStyles = makeStyles({
@@ -35,28 +38,45 @@ const useStyles = makeStyles({
 
 export const UserSelector = ({
   users,
-  onChange,
   disableClearable,
   defaultValue,
   label,
+  name,
+  control,
+  rules,
 }: Props) => {
   const classes = useStyles();
+
   return (
     <div className={classes.container}>
-      <Autocomplete
-        className={classes.autocomplete}
-        fullWidth
-        disableClearable={disableClearable}
-        defaultValue={defaultValue}
-        options={users}
-        getOptionLabel={option => option?.metadata?.name || ''}
-        renderOption={option => (
-          <Typography component="span">{option?.metadata?.name}</Typography>
+      <Controller
+        name={name}
+        control={control}
+        rules={rules}
+        defaultValue={defaultValue ? defaultValue.metadata.name : ''}
+        render={({ field: { onChange, value }, fieldState: { error } }) => (
+          <Autocomplete
+            className={classes.autocomplete}
+            fullWidth
+            disableClearable={disableClearable}
+            value={users.find(user => user.metadata.name === value) || null}
+            options={users}
+            getOptionLabel={option => option?.metadata?.name || ''}
+            renderOption={option => (
+              <Typography component="span">{option?.metadata?.name}</Typography>
+            )}
+            renderInput={params => (
+              <TextField
+                {...params}
+                label={label}
+                required={!!rules?.required}
+                error={!!error}
+                helperText={error?.message}
+              />
+            )}
+            onChange={(_, data) => onChange(data ? data.metadata.name : '')}
+          />
         )}
-        renderInput={params => <TextField {...params} label={label} />}
-        onChange={(_, data) => {
-          onChange(data);
-        }}
       />
     </div>
   );

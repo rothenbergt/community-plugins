@@ -136,15 +136,15 @@ export const ProjectDialog = ({
 
           <UserSelector
             users={users}
-            onChange={(user: Entity | null) =>
-              setValue('responsible', user ? user.metadata.name : '')
-            }
             disableClearable={false}
             defaultValue={
               users.find(u => u.metadata.name === defaultValues.responsible) ||
               null
             }
             label="Select responsible user"
+            name="responsible"
+            control={control}
+            rules={{ required: 'Please select a responsible user' }}
           />
 
           <InputField
