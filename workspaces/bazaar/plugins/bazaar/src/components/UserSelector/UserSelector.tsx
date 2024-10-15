@@ -14,9 +14,15 @@
  * limitations under the License.
  */
 import React from 'react';
-import { Entity, stringifyEntityRef } from '@backstage/catalog-model';
+import {
+  Entity,
+  stringifyEntityRef,
+  parseEntityRef,
+} from '@backstage/catalog-model';
 import Typography from '@material-ui/core/Typography';
-import Autocomplete from '@material-ui/lab/Autocomplete';
+import Autocomplete, {
+  createFilterOptions,
+} from '@material-ui/lab/Autocomplete';
 import TextField from '@material-ui/core/TextField';
 import { makeStyles } from '@material-ui/core/styles';
 import { Controller, Control } from 'react-hook-form';
@@ -24,7 +30,7 @@ import { Controller, Control } from 'react-hook-form';
 type Props = {
   users: Entity[];
   disableClearable: boolean;
-  defaultValue: Entity | null;
+  defaultValue: string | null;
   label: string;
   name: string;
   control: Control<any>;
@@ -35,6 +41,8 @@ const useStyles = makeStyles({
   container: { width: '100%', minWidth: '22rem' },
   autocomplete: { overflow: 'hidden' },
 });
+
+const filter = createFilterOptions<Entity | string>();
 
 export const UserSelector = ({
   users,
@@ -47,29 +55,37 @@ export const UserSelector = ({
 }: Props) => {
   const classes = useStyles();
 
+  const getDisplayName = (value: string | Entity) => {
+    if (!value) return '';
+    if (typeof value === 'string') {
+      try {
+        const { name: entityName } = parseEntityRef(value);
+        return entityName;
+      } catch {
+        return value;
+      }
+    }
+    return value.metadata.name;
+  };
+
   return (
     <div className={classes.container}>
       <Controller
         name={name}
         control={control}
         rules={rules}
-        defaultValue={defaultValue ? stringifyEntityRef(defaultValue) : ''}
+        defaultValue={defaultValue || ''}
         render={({ field: { onChange, value }, fieldState: { error } }) => (
           <Autocomplete
             className={classes.autocomplete}
             fullWidth
             freeSolo
             disableClearable={disableClearable}
-            value={
-              users.find(user => stringifyEntityRef(user) === value) || null
-            }
+            value={value}
             options={users}
-            getOptionLabel={option => {
-              if (typeof option === 'string') return option;
-              return option.metadata.name || stringifyEntityRef(option);
-            }}
+            getOptionLabel={getDisplayName}
             renderOption={option => (
-              <Typography component="span">{option.metadata.name}</Typography>
+              <Typography component="span">{getDisplayName(option)}</Typography>
             )}
             renderInput={params => (
               <TextField
@@ -88,6 +104,18 @@ export const UserSelector = ({
               } else {
                 onChange('');
               }
+            }}
+            filterOptions={(options, params) => {
+              const filtered = filter(options, params);
+              if (
+                params.inputValue !== '' &&
+                !options.some(
+                  option => getDisplayName(option) === params.inputValue,
+                )
+              ) {
+                filtered.push(params.inputValue);
+              }
+              return filtered;
             }}
           />
         )}
